@@ -1,0 +1,75 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "world.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "dirt.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "grass.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "shore.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "water.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "world.tmx": {
+            "scale": 1.2053125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 146.02022297122116,
+                "y": 159.70961887477316
+            }
+        },
+        "world2.tmx": {
+            "scale": 1.0517857142857143,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 159.7283531409168,
+                "y": 159.25297113752123
+            }
+        }
+    },
+    "last.imagePath": "/home/geoffrey/workspace/rust/games/TownCryer/assets/tinyworld/Ground",
+    "map.height": 20,
+    "map.lastUsedFormat": "tmx",
+    "map.renderOrder": "1",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "map.width": 20,
+    "openFiles": [
+        "dirt.tsx",
+        "shore.tsx",
+        "water.tsx",
+        "world.tmx",
+        "grass.tsx",
+        "world2.tmx"
+    ],
+    "project": "towncryer.tiled-project",
+    "property.type": "int",
+    "recentFiles": [
+        "dirt.tsx",
+        "shore.tsx",
+        "water.tsx",
+        "world2.tmx",
+        "grass.tsx",
+        "world.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    }
+}
