@@ -175,7 +175,7 @@ impl TileType {
         match self {
             TileType::None => panic!("Cannot get tileset index and layer ID for None tile type"),
             TileType::EmptyGround(ground) => (ground.tileset_index(), ground.animation_index(rng)),
-            TileType::GroundWithBuilding(ground, building) => {
+            TileType::GroundWithBuilding(ground, _) => {
                 match layer_index {
                     0 => (ground.tileset_index(), ground.animation_index(rng)),
                     //1 => (building.tileset_index(), building.layer_id()),
