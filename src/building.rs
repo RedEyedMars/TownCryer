@@ -22,10 +22,10 @@ impl Building {
 
     pub fn gen_sprite_index(&self, rng: &mut impl Rng) -> usize {
         match self {
-            Building::House => rng.gen_range(0..12),
-            Building::Farm => rng.gen_range(0..3),
+            Building::House => rng.random_range(0..12),
+            Building::Farm => rng.random_range(0..3),
             Building::Barracks => 0,
-            Building::Market => rng.gen_range(0..12),
+            Building::Market => rng.random_range(0..12),
         }
     }
 
@@ -39,7 +39,7 @@ impl Building {
     }
 
     pub fn random(rng: &mut impl Rng) -> Self {
-        match rng.gen_range(0..4) {
+        match rng.random_range(0..4) {
             0 => Building::House,
             1 => Building::Farm,
             2 => Building::Barracks,

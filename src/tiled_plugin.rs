@@ -18,7 +18,7 @@ use bevy::ecs::resource::Resource;
 use bevy::ecs::system::ResMut;
 use bevy::log::info;
 use bevy::{
-    asset::{AssetLoader, AssetPath},
+    asset::AssetPath,
     platform::collections::HashMap,
     prelude::{
         Assets, Handle, Image, Res,
