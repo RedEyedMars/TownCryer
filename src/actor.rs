@@ -194,7 +194,7 @@ pub fn attacking_actors_act(
         (Without<PlayerParty>, Without<ActorIsDead>),
     >,
 ) {
-    for (entity, mut state, attack_target, mut transform) in attacker_query.iter_mut() {
+    for (entity, mut state, attack_target, transform) in attacker_query.iter_mut() {
         if let ActorState::Attacking(ref mut timer) = *state {
             if let Ok((mut defender_state, mut health, target_transform)) =
                 defender_query.get_mut(attack_target.target)

@@ -1,4 +1,3 @@
-use core::time;
 
 use crate::common::Direction;
 use bevy::prelude::*;
@@ -26,7 +25,7 @@ impl AnimationState {
         }
     }
     fn y(&self) -> u32 {
-        use AnimationState::*;
+        
         match self {
             AnimationState::Idle => 0,
             AnimationState::Walk(_) => 0,

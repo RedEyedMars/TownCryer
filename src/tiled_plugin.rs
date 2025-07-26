@@ -12,22 +12,19 @@
 //   * When the 'atlas' feature is enabled tilesets using a collection of images will be skipped.
 //   * Only finite tile layers are loaded. Infinite tile layers and object layers will be skipped.
 
-use std::io::ErrorKind;
 
 use bevy::asset::AssetServer;
 use bevy::ecs::resource::Resource;
-use bevy::ecs::system::{ResMut, Single};
-use bevy::log::{info, warn};
+use bevy::ecs::system::ResMut;
+use bevy::log::info;
 use bevy::{
-    asset::{AssetLoader, AssetPath, io::Reader},
+    asset::{AssetLoader, AssetPath},
     platform::collections::HashMap,
     prelude::{
-        Added, Asset, AssetApp, AssetEvent, AssetId, Assets, Bundle, Commands, Component, Entity,
-        EventReader, GlobalTransform, Handle, Image, Plugin, Query, Res, Transform, Update,
+        Assets, Handle, Image, Res,
     },
     reflect::TypePath,
 };
-use bevy_ecs_tiled::map::TiledMapHandle;
 use bevy_ecs_tiled::prelude::TiledMap;
 use bevy_ecs_tilemap::prelude::*;
 

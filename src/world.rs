@@ -61,8 +61,8 @@ impl WorldWithTiles {
                     let index = (y * world.width + x) as usize;
                     if let TileType::EmptyGround(ref ground) = world.tiles[index] {
                         let direction = Direction::random(&mut rng.0);
-                        let next_y = (y as i32 + direction.y());
-                        let next_x = (x as i32 + direction.x());
+                        let next_y = y as i32 + direction.y();
+                        let next_x = x as i32 + direction.x();
                         if next_y >= world.height as i32
                             || next_x >= world.width as i32
                             || next_x < 0

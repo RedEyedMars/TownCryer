@@ -1,9 +1,11 @@
 use bevy::{
-    platform::collections::HashMap, prelude::*, window::{Window, WindowPlugin, WindowResolution}
+    platform::collections::HashMap,
+    prelude::*,
+    window::{Window, WindowPlugin, WindowResolution},
 };
 use bevy_ecs_tiled::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use std::time::SystemTime;
 
@@ -15,7 +17,7 @@ pub mod sprite_animation;
 pub mod tiled_plugin;
 pub mod world;
 
-use crate::{common::Direction, environment::Ground, tiled_plugin::TiledMapWithTextures};
+use crate::{common::Direction, tiled_plugin::TiledMapWithTextures};
 
 fn main() {
     App::new()
@@ -115,7 +117,7 @@ fn debug_actor_commands(
     if keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW) {
         for (mut state, mut direction) in query.iter_mut() {
             *direction = Direction::North;
-            if let sprite_animation::AnimationState::Walk(frame) = *state {
+            if let sprite_animation::AnimationState::Walk(_) = *state {
             } else {
                 *state = sprite_animation::AnimationState::Walk(0);
             }
@@ -123,7 +125,7 @@ fn debug_actor_commands(
     } else if keyboard_input.pressed(KeyCode::ArrowDown) || keyboard_input.pressed(KeyCode::KeyS) {
         for (mut state, mut direction) in query.iter_mut() {
             *direction = Direction::South;
-            if let sprite_animation::AnimationState::Walk(frame) = *state {
+            if let sprite_animation::AnimationState::Walk(_) = *state {
             } else {
                 *state = sprite_animation::AnimationState::Walk(0);
             }
@@ -131,7 +133,7 @@ fn debug_actor_commands(
     } else if keyboard_input.pressed(KeyCode::ArrowLeft) || keyboard_input.pressed(KeyCode::KeyA) {
         for (mut state, mut direction) in query.iter_mut() {
             *direction = Direction::West;
-            if let sprite_animation::AnimationState::Walk(frame) = *state {
+            if let sprite_animation::AnimationState::Walk(_) = *state {
             } else {
                 *state = sprite_animation::AnimationState::Walk(0);
             }
@@ -139,7 +141,7 @@ fn debug_actor_commands(
     } else if keyboard_input.pressed(KeyCode::ArrowRight) || keyboard_input.pressed(KeyCode::KeyD) {
         for (mut state, mut direction) in query.iter_mut() {
             *direction = Direction::East;
-            if let sprite_animation::AnimationState::Walk(frame) = *state {
+            if let sprite_animation::AnimationState::Walk(_) = *state {
             } else {
                 *state = sprite_animation::AnimationState::Walk(0);
             }
@@ -170,7 +172,7 @@ pub fn debug_world_commands(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut query: Query<&mut Transform, With<Camera2d>>,
 ) {
-    if let Ok(mut transform) = query.get_single_mut() {
+    if let Ok(mut transform) = query.single_mut() {
         if keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW) {
             transform.translation.y += 16.0;
         } else if keyboard_input.pressed(KeyCode::ArrowDown)
