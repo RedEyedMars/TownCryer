@@ -30,8 +30,8 @@ pub struct WorldWithTiles {
 impl WorldWithTiles {
     pub fn build_world(
         mut commands: Commands,
-        mut world: ResMut<WorldWithTiles>,
         mut rng: ResMut<RandomSource>,
+        mut world: ResMut<WorldWithTiles>,
         tiled_map: Res<TiledMapWithTextures>,
     ) {
         if !tiled_map.loaded {
@@ -41,7 +41,6 @@ impl WorldWithTiles {
             return;
         }
         let width = world.width;
-        let height = world.height;
         let map = tiled_map.map.as_ref().unwrap();
 
         let mut need_ground = world.width * world.height;
