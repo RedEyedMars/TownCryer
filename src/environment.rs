@@ -45,8 +45,8 @@ impl Ground {
 
     pub fn tileset_index(&self) -> usize {
         match self {
-            Ground::Grass(_) => 0,
-            Ground::Dirt(_) => 1,
+            Ground::Dirt(_) => 0,
+            Ground::Grass(_) => 1,
             Ground::Shore(_) => 2,
             Ground::Water => 3,
         }

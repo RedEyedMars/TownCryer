@@ -1,3 +1,4 @@
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::TilemapAnchor;
 use bevy_ecs_tilemap::TilemapBundle;
@@ -85,81 +86,133 @@ impl WorldWithTiles {
                 }
             }
         }
+        let tile_size = TilemapTileSize { x: 16f32, y: 16f32 };
 
-        for (tileset_index, _) in map.tilesets().iter().enumerate() {
-            let Some(tilemap_texture) = tiled_map.tilemap_textures.get(&tileset_index) else {
-                warn!("Skipped creating layer with missing tilemap textures.");
-                continue;
-            };
+        let tile_spacing = TilemapSpacing {
+            x: 0 as f32,
+            y: 0 as f32,
+        };
 
-            let tile_size = TilemapTileSize { x: 16f32, y: 16f32 };
+        let map_size = TilemapSize {
+            x: world.width,
+            y: world.height,
+        };
 
-            let tile_spacing = TilemapSpacing {
-                x: 0 as f32,
-                y: 0 as f32,
-            };
+        let grid_size = TilemapGridSize { x: 16f32, y: 16f32 };
 
-            let map_size = TilemapSize {
+        let map_type = TilemapType::Square;
+        let mut grass_tile_storage = (
+            commands.spawn_empty().id(),
+            TileStorage::empty(TilemapSize {
                 x: world.width,
                 y: world.height,
-            };
+            }),
+        );
+        let mut dirt_tile_storage = (
+            commands.spawn_empty().id(),
+            TileStorage::empty(TilemapSize {
+                x: world.width,
+                y: world.height,
+            }),
+        );
+        let mut water_tile_storage = (
+            commands.spawn_empty().id(),
+            TileStorage::empty(TilemapSize {
+                x: world.width,
+                y: world.height,
+            }),
+        );
+        let mut shore_tile_storage = (
+            commands.spawn_empty().id(),
+            TileStorage::empty(TilemapSize {
+                x: world.width,
+                y: world.height,
+            }),
+        );
 
-            let grid_size = TilemapGridSize { x: 16f32, y: 16f32 };
+        let layer_index = 0u32;
+        for x in 0..world.width {
+            for y in 0..world.height {
+                let (tiles_tileset_index, layer_tile_id) = world.tiles
+                    [(y * world.width + x) as usize]
+                    .get_tileset_index_and_layer_id(layer_index, &mut rng.0);
 
-            let map_type = TilemapType::Square;
+                let texture_index = *tiled_map.tile_image_offsets.get(&(tiles_tileset_index, layer_tile_id))
+                                        .expect("The offset into to image vector should have been saved during the initial load.");
 
-            let mut tile_storage = TileStorage::empty(map_size);
-            let layer_entity = commands.spawn_empty().id();
-
-            let layer_index = 0u32;
-            for x in 0..world.width {
-                for y in 0..world.height {
-                    let (tiles_tileset_index, layer_tile_id) = world.tiles
-                        [(y * world.width + x) as usize]
-                        .get_tileset_index_and_layer_id(layer_index, &mut rng.0);
-                    if tiles_tileset_index != tileset_index {
-                        continue;
-                    }
-
-                    let texture_index = match tilemap_texture {
-                                    TilemapTexture::Single(_) => layer_tile_id,
-                                    TilemapTexture::Vector(_) =>
-                                        *tiled_map.tile_image_offsets.get(&(tileset_index, layer_tile_id))
-                                        .expect("The offset into to image vector should have been saved during the initial load."),
-                                    _ => unreachable!()
-                                };
-
-                    let tile_pos = TilePos { x, y };
-                    let tile_entity = commands
-                        .spawn(TileBundle {
-                            position: tile_pos,
-                            tilemap_id: TilemapId(layer_entity),
-                            texture_index: TileTextureIndex(texture_index),
-                            flip: TileFlip {
-                                x: false,
-                                y: false,
-                                d: false,
-                            },
-                            ..Default::default()
-                        })
-                        .id();
-                    tile_storage.set(&tile_pos, tile_entity);
-                }
+                let tile_pos = TilePos { x, y };
+                let layer_storage = match tiles_tileset_index {
+                    0 => &mut dirt_tile_storage,
+                    1 => &mut grass_tile_storage,
+                    2 => &mut shore_tile_storage,
+                    3 => &mut water_tile_storage,
+                    _ => unreachable!("Invalid tileset index"),
+                };
+                let tile_entity = commands
+                    .spawn(TileBundle {
+                        position: tile_pos,
+                        tilemap_id: TilemapId(layer_storage.0),
+                        texture_index: TileTextureIndex(texture_index),
+                        flip: TileFlip {
+                            x: false,
+                            y: false,
+                            d: false,
+                        },
+                        ..Default::default()
+                    })
+                    .id();
+                layer_storage.1.set(&tile_pos, tile_entity);
             }
-
-            commands.entity(layer_entity).insert(TilemapBundle {
-                grid_size,
-                size: map_size,
-                storage: tile_storage,
-                texture: tilemap_texture.clone(),
-                tile_size,
-                spacing: tile_spacing,
-                anchor: TilemapAnchor::Center,
-                transform: Transform::from_xyz(0f32, 0f32, -1f32 as f32),
-                map_type,
-                ..Default::default()
-            });
         }
+
+        commands.spawn(TilemapBundle {
+            grid_size,
+            size: map_size,
+            storage: dirt_tile_storage.1,
+            texture: tiled_map.tilemap_textures[&0].clone(),
+            tile_size,
+            spacing: tile_spacing,
+            anchor: TilemapAnchor::Center,
+            transform: Transform::from_xyz(0f32, 0f32, -1f32 as f32),
+            map_type,
+            ..Default::default()
+        });
+        commands.spawn(TilemapBundle {
+            grid_size,
+            size: map_size,
+            storage: grass_tile_storage.1,
+            texture: tiled_map.tilemap_textures[&1].clone(),
+            tile_size,
+            spacing: tile_spacing,
+            anchor: TilemapAnchor::Center,
+            transform: Transform::from_xyz(0f32, 0f32, -1f32 as f32),
+            map_type,
+            ..Default::default()
+        });
+        commands.spawn(TilemapBundle {
+            grid_size,
+            size: map_size,
+            storage: shore_tile_storage.1,
+            texture: tiled_map.tilemap_textures[&2].clone(),
+            tile_size,
+            spacing: tile_spacing,
+            anchor: TilemapAnchor::Center,
+            transform: Transform::from_xyz(0f32, 0f32, -1f32 as f32),
+            map_type,
+            ..Default::default()
+        });
+        commands.spawn(TilemapBundle {
+            grid_size,
+            size: map_size,
+            storage: water_tile_storage.1,
+            texture: tiled_map.tilemap_textures[&3].clone(),
+            tile_size,
+            spacing: tile_spacing,
+            anchor: TilemapAnchor::Center,
+            transform: Transform::from_xyz(0f32, 0f32, -1f32 as f32),
+            map_type,
+            ..Default::default()
+        });
 
         world.loaded = true;
     }
