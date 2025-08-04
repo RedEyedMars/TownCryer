@@ -2,12 +2,30 @@ use bevy::prelude::*;
 
 use rand::Rng;
 
+use crate::{
+    RandomSource,
+    actor::{ActorKind, EnergySource, NeedsStorage, PlayerParty, spawns::spawn_player_actor},
+    building,
+    environment::{DrinkItem, FoodItem},
+};
+
 #[derive(Component, Clone)]
 pub enum Building {
     House,
     Farm,
     Barracks,
     Market,
+}
+
+#[derive(Component)]
+pub struct BuildingInhabitants {
+    pub count: u32,
+    pub max: u32,
+}
+
+#[derive(Component)]
+pub struct VillagerSpawningTimer {
+    pub timer: Timer,
 }
 
 impl Building {
@@ -68,9 +86,9 @@ impl Building {
         );
         let texture_atlas_layout = texture_atlas_layouts.add(layout);
 
-        let mut transform = Transform::from_translation(position);
-        transform.scale = Vec3::splat(2.0);
-        commands.spawn((
+        let transform = Transform::from_translation(position);
+        //transform.scale = Vec3::splat(2.0);
+        let mut entity = commands.spawn((
             Sprite::from_atlas_image(
                 texture,
                 TextureAtlas {
@@ -78,8 +96,130 @@ impl Building {
                     index,
                 },
             ),
+            NeedsStorage {
+                food: Vec::new(),
+                drink: Vec::new(),
+            },
             transform,
+            PlayerParty,
             self.clone(),
         ));
+        if let Building::House = self {
+            entity
+                .insert(BuildingInhabitants { count: 0, max: 5 })
+                .insert(VillagerSpawningTimer {
+                    timer: Timer::from_seconds(5.0, TimerMode::Repeating),
+                })
+                .insert(EnergySource {
+                    recovery_rate: 10f32,
+                });
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        match self {
+            Building::House => "House",
+            Building::Farm => "Farm",
+            Building::Barracks => "Barracks",
+            Building::Market => "Market",
+        }
+    }
+
+    pub fn is_passable(&self) -> bool {
+        match self {
+            Building::House | Building::Farm | Building::Barracks | Building::Market => false,
+        }
+    }
+}
+
+#[derive(Component)]
+pub enum BuildingAction {
+    Train(ActorKind),
+    Heal,
+    Upgrade,
+}
+
+#[derive(Component)]
+pub struct BuildingState {
+    pub action: Option<BuildingAction>,
+}
+
+#[derive(Component)]
+pub struct BuildingTimer {
+    pub timer: Timer,
+}
+
+pub fn handle_building_action(
+    time: Res<Time>,
+    mut query: Query<
+        (Entity, &Building, &mut BuildingState, &mut BuildingTimer),
+        With<PlayerParty>,
+    >,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    for (entity, _, mut state, mut timer) in query.iter_mut() {
+        if let Some(action) = &state.action {
+            timer.timer.tick(time.delta());
+            if timer.timer.just_finished() {
+                match action {
+                    BuildingAction::Train(actor_kind) => {
+                        spawn_player_actor(
+                            &mut commands,
+                            &asset_server,
+                            &mut texture_atlas_layouts,
+                            actor_kind.clone(),
+                            Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+                            Some(entity),
+                        );
+                    }
+                    BuildingAction::Heal => {
+                        // Implement healing logic here
+                    }
+                    BuildingAction::Upgrade => {
+                        // Implement upgrade logic here
+                    }
+                }
+                state.action = None; // Reset action after completion
+            }
+        }
+    }
+}
+
+pub fn spawn_villagers(
+    time: Res<Time>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut rng: ResMut<RandomSource>,
+    mut houses: Query<(
+        Entity,
+        &Transform,
+        &Building,
+        &mut BuildingInhabitants,
+        &mut VillagerSpawningTimer,
+    )>,
+) {
+    for (house, transform, building, mut inhabitants, mut timer) in houses.iter_mut() {
+        if let Building::House = building {
+            timer.timer.tick(time.delta());
+            if timer.timer.just_finished() {
+                if inhabitants.count < inhabitants.max {
+                    spawn_player_actor(
+                        &mut commands,
+                        &asset_server,
+                        &mut texture_atlas_layouts,
+                        ActorKind::Villager,
+                        Transform::from_translation(
+                            transform.translation
+                                + Vec3::new(rng.0.random_range(-8.0..8.0), -16.0, 0.0),
+                        ),
+                        Some(house),
+                    );
+                    inhabitants.count += 1;
+                }
+            }
+        }
     }
 }

@@ -8,6 +8,16 @@ pub enum Ground {
     Water,
     Shore(usize),
 }
+#[derive(Component, Debug, Clone)]
+pub struct FoodItem {
+    pub name: String,
+    pub nutrition: u32,
+}
+#[derive(Component, Debug, Clone)]
+pub struct DrinkItem {
+    pub name: String,
+    pub hydration: u32,
+}
 #[derive(Component)]
 pub struct Passable;
 
@@ -26,7 +36,7 @@ impl Ground {
         }
     }
 
-    fn is_passable(&self) -> bool {
+    pub fn is_passable(&self) -> bool {
         match self {
             Ground::Grass(_) | Ground::Dirt(_) => true,
             Ground::Water | Ground::Shore(_) => false,

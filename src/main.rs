@@ -5,19 +5,21 @@ use bevy::{
 };
 use bevy_ecs_tiled::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
+use bevy_lunex::{UiLunexDebugPlugin, UiLunexPlugins, UiSourceCamera};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use std::time::SystemTime;
 
 pub mod actor;
 pub mod building;
+pub mod castle;
 pub mod common;
 pub mod environment;
 pub mod sprite_animation;
-pub mod tiled_plugin;
+pub mod ui;
 pub mod world;
 
-use crate::{common::Direction, tiled_plugin::TiledMapWithTextures};
+use crate::common::Direction;
 
 fn main() {
     App::new()
@@ -34,22 +36,21 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest()),
         )
+        .add_plugins(UiLunexPlugins)
+        .add_plugins(UiLunexDebugPlugin::<0, 0>)
         .add_plugins(TiledMapPlugin::default())
-        .add_systems(Startup, setup)
-        .add_systems(Update, (debug_actor_commands, debug_world_commands))
+        .add_plugins(actor::actions::ActionPlugin)
+        .add_plugins(world::plugin::WorldPlugin)
+        .add_systems(Startup, (setup, ui::castle::setup_menu))
+        .add_systems(First, update_cursor_pos)
+        .add_systems(Update, debug_actor_commands)
         .add_systems(
             Update,
-            (tiled_plugin::load, world::WorldWithTiles::build_world),
+            (debug_world_commands, ui::menu_follow_camera).chain(),
         )
-        .add_systems(
-            Update,
-            (
-                actor::fix_idlers,
-                actor::fix_thinkers,
-                actor::move_attacking_actors,
-                actor::attacking_actors_act,
-            ),
-        )
+        .add_observer(ui::observer_hover_button)
+        .add_observer(ui::observer_hover_button_text)
+        .add_systems(Update, building::spawn_villagers)
         .add_systems(FixedUpdate, (sprite_animation::animate_sprite,))
         .run();
 }
@@ -69,34 +70,9 @@ fn setup(
             .as_secs(),
     );
 
-    commands.spawn(Camera2d);
+    commands.spawn((Camera2d, UiSourceCamera::<0>));
 
-    let map_handle: Handle<TiledMap> = asset_server.load("world.tmx");
-
-    commands.spawn(TilemapAnchor::default());
-    commands.spawn(TilemapRenderSettings::default());
-    commands.spawn(TiledMapLayerZOffset::default());
-    commands.insert_resource(world::WorldWithTiles {
-        width: 256,
-        height: 256,
-        loaded: false,
-        tiles: vec![world::TileType::None; 256 * 256],
-    });
-    commands.insert_resource(TiledMapWithTextures {
-        loaded: false,
-        handle: map_handle,
-        map: None,
-        tilemap_textures: HashMap::default(),
-        tile_image_offsets: HashMap::default(),
-    });
-
-    actor::spawn_player_actor(
-        &mut commands,
-        &asset_server,
-        &mut texture_atlas_layouts,
-        Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-    );
-    actor::spawn_enemy_actor(
+    actor::spawns::spawn_enemy_actor(
         &mut commands,
         &asset_server,
         &mut texture_atlas_layouts,
@@ -108,6 +84,7 @@ fn setup(
         0.1,
         TimerMode::Repeating,
     )));
+    commands.insert_resource(CursorPos::default());
 }
 
 fn debug_actor_commands(
@@ -170,23 +147,40 @@ fn debug_actor_commands(
 
 pub fn debug_world_commands(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut query: Query<&mut Transform, With<Camera2d>>,
+    mut camera: Single<(&mut Transform, &Camera2d)>,
 ) {
-    if let Ok(mut transform) = query.single_mut() {
-        if keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW) {
-            transform.translation.y += 16.0;
-        } else if keyboard_input.pressed(KeyCode::ArrowDown)
-            || keyboard_input.pressed(KeyCode::KeyS)
-        {
-            transform.translation.y -= 16.0;
-        } else if keyboard_input.pressed(KeyCode::ArrowLeft)
-            || keyboard_input.pressed(KeyCode::KeyA)
-        {
-            transform.translation.x -= 16.0;
-        } else if keyboard_input.pressed(KeyCode::ArrowRight)
-            || keyboard_input.pressed(KeyCode::KeyD)
-        {
-            transform.translation.x += 16.0;
+    let transform = &mut camera.0;
+    if keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW) {
+        transform.translation.y += 16.0;
+    } else if keyboard_input.pressed(KeyCode::ArrowDown) || keyboard_input.pressed(KeyCode::KeyS) {
+        transform.translation.y -= 16.0;
+    } else if keyboard_input.pressed(KeyCode::ArrowLeft) || keyboard_input.pressed(KeyCode::KeyA) {
+        transform.translation.x -= 16.0;
+    } else if keyboard_input.pressed(KeyCode::ArrowRight) || keyboard_input.pressed(KeyCode::KeyD) {
+        transform.translation.x += 16.0;
+    }
+}
+
+#[derive(Resource)]
+pub struct CursorPos(Vec2);
+impl Default for CursorPos {
+    fn default() -> Self {
+        // Initialize the cursor pos at some far away place. It will get updated
+        // correctly when the cursor moves.
+        Self(Vec2::new(-1000.0, -1000.0))
+    }
+}
+
+pub fn update_cursor_pos(
+    camera_q: Query<(&GlobalTransform, &Camera)>,
+    mut cursor_moved_events: EventReader<CursorMoved>,
+    mut cursor_pos: ResMut<CursorPos>,
+) {
+    for cursor_moved in cursor_moved_events.read() {
+        for (cam_t, cam) in camera_q.iter() {
+            if let Ok(pos) = cam.viewport_to_world_2d(cam_t, cursor_moved.position) {
+                *cursor_pos = CursorPos(pos);
+            }
         }
     }
 }
