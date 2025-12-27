@@ -1,10 +1,8 @@
 use bevy::{
-    platform::collections::HashMap,
     prelude::*,
     window::{Window, WindowPlugin, WindowResolution},
 };
 use bevy_ecs_tiled::prelude::*;
-use bevy_ecs_tilemap::prelude::*;
 use bevy_lunex::{UiLunexDebugPlugin, UiLunexPlugins, UiSourceCamera};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -19,7 +17,7 @@ pub mod sprite_animation;
 pub mod ui;
 pub mod world;
 
-use crate::common::Direction;
+use crate::{common::Direction, ui::InspectHandle};
 
 fn main() {
     App::new()
@@ -37,11 +35,12 @@ fn main() {
                 .set(ImagePlugin::default_nearest()),
         )
         .add_plugins(UiLunexPlugins)
-        .add_plugins(UiLunexDebugPlugin::<0, 0>)
+        //.add_plugins(UiLunexDebugPlugin::<0, 0>)
         .add_plugins(TiledMapPlugin::default())
         .add_plugins(actor::actions::ActionPlugin)
+        .add_plugins(actor::thinking::ThinkingPlugin)
         .add_plugins(world::plugin::WorldPlugin)
-        .add_systems(Startup, (setup, ui::castle::setup_menu))
+        .add_systems(Startup, (setup, ui::setup_menus))
         .add_systems(First, update_cursor_pos)
         .add_systems(Update, debug_actor_commands)
         .add_systems(
@@ -50,7 +49,21 @@ fn main() {
         )
         .add_observer(ui::observer_hover_button)
         .add_observer(ui::observer_hover_button_text)
-        .add_systems(Update, building::spawn_villagers)
+        .add_systems(
+            Update,
+            (
+                building::spawn_villagers,
+                building::construction::update_construction,
+            ),
+        )
+        .add_systems(
+            Update,
+            (
+                ui::barracks::set_members_and_trainees_when_guild_changes,
+                ui::barracks::set_members_and_trainees_when_inspect_handle_changes,
+                ui::barracks::set_members_and_trainees_when_training_changes,
+            ),
+        )
         .add_systems(FixedUpdate, (sprite_animation::animate_sprite,))
         .run();
 }
@@ -63,7 +76,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let seeded_rng = ChaCha8Rng::seed_from_u64(
+    let mut seeded_rng = ChaCha8Rng::seed_from_u64(
         SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
